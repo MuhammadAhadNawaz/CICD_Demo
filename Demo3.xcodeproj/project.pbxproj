@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1FA919947CF0FAF775796DA9 /* Pods_Demo3.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3EE87C65B51F7D03661479D7 /* Pods_Demo3.framework */; };
 		789F24DD292F1017002C8CC5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 789F24DC292F1017002C8CC5 /* AppDelegate.swift */; };
 		789F24DF292F1017002C8CC5 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 789F24DE292F1017002C8CC5 /* SceneDelegate.swift */; };
 		789F24E1292F1017002C8CC5 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 789F24E0292F1017002C8CC5 /* ViewController.swift */; };
@@ -16,6 +17,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3A69059971AD2EF9F4F39820 /* Pods-Demo3.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Demo3.release.xcconfig"; path = "Target Support Files/Pods-Demo3/Pods-Demo3.release.xcconfig"; sourceTree = "<group>"; };
+		3EE87C65B51F7D03661479D7 /* Pods_Demo3.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Demo3.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6025FDD68BC002B74A34BE84 /* Pods-Demo3.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Demo3.debug.xcconfig"; path = "Target Support Files/Pods-Demo3/Pods-Demo3.debug.xcconfig"; sourceTree = "<group>"; };
 		789F24D9292F1017002C8CC5 /* Demo3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Demo3.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		789F24DC292F1017002C8CC5 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		789F24DE292F1017002C8CC5 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -31,17 +35,28 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FA919947CF0FAF775796DA9 /* Pods_Demo3.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		131CD467690BF3D2250AE4DB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3EE87C65B51F7D03661479D7 /* Pods_Demo3.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		789F24D0292F1017002C8CC5 = {
 			isa = PBXGroup;
 			children = (
 				789F24DB292F1017002C8CC5 /* Demo3 */,
 				789F24DA292F1017002C8CC5 /* Products */,
+				C3190E2671329B57CBA6CC48 /* Pods */,
+				131CD467690BF3D2250AE4DB /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -67,6 +82,15 @@
 			path = Demo3;
 			sourceTree = "<group>";
 		};
+		C3190E2671329B57CBA6CC48 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				6025FDD68BC002B74A34BE84 /* Pods-Demo3.debug.xcconfig */,
+				3A69059971AD2EF9F4F39820 /* Pods-Demo3.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -74,6 +98,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 789F24ED292F1019002C8CC5 /* Build configuration list for PBXNativeTarget "Demo3" */;
 			buildPhases = (
+				179840BD24C1346B9825A472 /* [CP] Check Pods Manifest.lock */,
 				789F24D5292F1017002C8CC5 /* Sources */,
 				789F24D6292F1017002C8CC5 /* Frameworks */,
 				789F24D7292F1017002C8CC5 /* Resources */,
@@ -132,6 +157,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		179840BD24C1346B9825A472 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-Demo3-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		789F24D5292F1017002C8CC5 /* Sources */ = {
@@ -282,11 +332,15 @@
 		};
 		789F24EE292F1019002C8CC5 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6025FDD68BC002B74A34BE84 /* Pods-Demo3.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 23050101;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 577FDAQP79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Demo3/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -298,9 +352,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.insite.Demo3;
+				MARKETING_VERSION = 2.9;
+				PRODUCT_BUNDLE_IDENTIFIER = com.insite.montanevalley;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = MontaneRanch_Dis_15;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -309,11 +365,15 @@
 		};
 		789F24EF292F1019002C8CC5 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 3A69059971AD2EF9F4F39820 /* Pods-Demo3.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 23050101;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 577FDAQP79;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Demo3/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -325,9 +385,11 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.insite.Demo3;
+				MARKETING_VERSION = 2.9;
+				PRODUCT_BUNDLE_IDENTIFIER = com.insite.montanevalley;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = MontaneRanch_Dis_15;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
