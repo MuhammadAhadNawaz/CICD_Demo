@@ -1,0 +1,286 @@
+# fastlane/Fastfile
+default_platform(:ios)
+
+# Load central configuration from same directory
+require_relative 'AppConfig'
+
+platform :ios do
+  ########################################################################
+  # Helper: Ensure app-specific password is in keychain
+  ########################################################################
+  def ensure_app_specific_password
+    apple_id = AppConfig::APPLE_ID
+    keychain_service = "itmsUploader"
+    
+    # Try to retrieve from keychain
+    password = `security find-generic-password -a "#{apple_id}" -s "#{keychain_service}" -w 2>/dev/null`.strip
+    
+    if password.nil? || password.empty?
+      # If not found, ask for it
+      UI.message("🔑 No password found in Keychain for #{apple_id}")
+      password = UI.password("Please enter your App-Specific Password: ")
+      
+      # Store in keychain
+      `security add-generic-password -a "#{apple_id}" -s "#{keychain_service}" -w "#{password}" -U 2>/dev/null`
+      UI.success("✅ Password securely stored in Keychain for future uploads")
+    else
+      UI.success("✅ Password found in Keychain")
+    end
+    
+    # App-specific password must be set in this variable for TestFlight/App Store uploads.
+    ENV["FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD"] = password
+    ENV["FASTLANE_USER"] = apple_id
+    
+    password
+  end
+
+  ########################################################################
+  # Helper: Get profile info from shell script
+  ########################################################################
+  def get_profiles_from_script
+    script_path = File.join(__dir__, "identify_project_profiles.sh")
+    
+    unless File.executable?(script_path)
+      UI.user_error!("Script not found or not executable: #{script_path}\nRun: chmod +x fastlane/identify_project_profiles.sh")
+    end
+    
+    output = `#{script_path}`
+    
+    main_profile = nil
+    autofill_profile = nil
+    widget_profile = nil
+    team_id = AppConfig::TEAM_ID
+    
+    output.each_line do |line|
+      if line.include?("Main App Profile:")
+        main_profile = line.split("Main App Profile:").last.strip
+        main_profile = nil if main_profile.empty? || main_profile == "NOT FOUND"
+      elsif line.include?("AutoFill Profile:")
+        autofill_profile = line.split("AutoFill Profile:").last.strip
+        autofill_profile = nil if autofill_profile.empty? || autofill_profile == "NOT FOUND"
+      elsif line.include?("Widget Profile:")
+        widget_profile = line.split("Widget Profile:").last.strip
+        widget_profile = nil if widget_profile.empty? || widget_profile == "NOT FOUND"
+      elsif line.include?("Team ID:")
+        team_id = line.split("Team ID:").last.strip if team_id.nil?
+        team_id = nil if team_id.empty? || team_id == "NOT FOUND"
+      end
+    end
+    
+    {
+      main: main_profile,
+      autofill: autofill_profile,
+      widget: widget_profile,
+      team_id: team_id
+    }
+  end
+
+  ########################################################################
+  # Helper: Copy profiles to system location
+  ########################################################################
+  lane :install_provisioning_profiles do
+    UI.message("📦 Installing provisioning profiles from project...")
+    
+    system_profiles_dir = File.expand_path("~/Library/MobileDevice/Provisioning Profiles")
+    FileUtils.mkdir_p(system_profiles_dir)
+    
+    profiles_dir = AppConfig::PROFILES_DIR
+    
+    if Dir.exist?(profiles_dir)
+      Dir.glob("#{profiles_dir}/*.mobileprovision").each do |profile|
+        dest = "#{system_profiles_dir}/#{File.basename(profile)}"
+        FileUtils.cp(profile, dest, verbose: false)
+        UI.message("  ✅ Installed: #{File.basename(profile)}")
+      end
+      UI.success("✅ All provisioning profiles installed to system")
+    else
+      UI.user_error!("Profiles directory not found: #{profiles_dir}")
+    end
+  end
+
+  ########################################################################
+  # Check profiles lane
+  ########################################################################
+  desc "Check provisioning profiles"
+  lane :check_profiles do
+    UI.message("📱 Reading provisioning profiles...")
+    UI.message("")
+    
+    profiles = get_profiles_from_script
+    
+    UI.message("Paths:")
+    UI.message("  Project Root: #{AppConfig::PROJECT_ROOT}")
+    UI.message("  Workspace: #{AppConfig::WORKSPACE}")
+    UI.message("  Build Directory: #{AppConfig::BUILD_DIRECTORY}")
+    UI.message("  Profiles Directory: #{AppConfig::PROFILES_DIR}")
+    UI.message("")
+    
+    UI.message("Bundle IDs from config:")
+    UI.message("  📱 Main App: #{AppConfig.bundle_id(:main)}")
+    UI.message("  📱 AutoFill: #{AppConfig.bundle_id(:autofill)}")
+    UI.message("  📱 Widget: #{AppConfig.bundle_id(:widget)}")
+    UI.message("")
+    
+    UI.message("Provisioning profiles found:")
+    UI.message("  📱 Main App: #{profiles[:main] || '❌ NOT FOUND'}")
+    UI.message("  📱 AutoFill: #{profiles[:autofill] || '❌ NOT FOUND'}")
+    UI.message("  📱 Widget: #{profiles[:widget] || '❌ NOT FOUND'}")
+    UI.message("  🔑 Team ID: #{profiles[:team_id] || '❌ NOT FOUND'}")
+    
+    if File.exist?(AppConfig::WORKSPACE)
+      UI.success("✅ Workspace found!")
+    else
+      UI.error("❌ Workspace not found at: #{AppConfig::WORKSPACE}")
+    end
+    
+    if profiles[:main].nil? || profiles[:autofill].nil? || profiles[:widget].nil?
+      UI.error("❌ Missing required provisioning profiles!")
+    else
+      UI.success("✅ All profiles found!")
+      install_provisioning_profiles
+    end
+  end
+
+  ########################################################################
+  # Helper: Build options hash
+  ########################################################################
+def build_options(profiles)
+  {
+    workspace: AppConfig::WORKSPACE,
+    scheme: AppConfig::SCHEME,
+    configuration: AppConfig::CONFIGURATION,
+    export_method: AppConfig::EXPORT_METHOD,
+    output_directory: AppConfig::BUILD_DIRECTORY,
+    output_name: AppConfig::IPA_NAME,
+    clean: true,
+    export_options: {
+      method: AppConfig::EXPORT_METHOD,
+      signingStyle: "manual",
+      signingCertificate: AppConfig::SIGNING_CERTIFICATE,
+      teamID: profiles[:team_id],
+      provisioningProfiles: {
+        AppConfig.bundle_id(:main) => profiles[:main],
+        AppConfig.bundle_id(:autofill) => profiles[:autofill],
+        AppConfig.bundle_id(:widget) => profiles[:widget]
+      },
+      uploadSymbols: true,
+      uploadBitcode: false,
+      compileBitcode: false,
+      # Add this to handle SDK frameworks
+      stripSwiftSymbols: true,
+      embedOnDemandResourcesAssetPacksInBundle: false,
+      # Important: Don't re-sign embedded frameworks
+      iCloudContainerEnvironment: "Production"
+    }
+  }
+end
+
+  ########################################################################
+  # Build only lane
+  ########################################################################
+  desc "Build without uploading"
+  lane :build_only do
+    unless File.exist?(AppConfig::WORKSPACE)
+      UI.user_error!("Workspace not found at: #{AppConfig::WORKSPACE}")
+    end
+    
+    install_provisioning_profiles
+    profiles = get_profiles_from_script
+    
+    if profiles[:main].nil? || profiles[:autofill].nil? || profiles[:widget].nil?
+      UI.user_error!("Missing provisioning profiles! Run 'fastlane check_profiles' first.")
+    end
+    
+    UI.message("🔨 Building with manual signing...")
+    UI.message("   Workspace: #{AppConfig::WORKSPACE}")
+    UI.message("   Build output: #{AppConfig::BUILD_DIRECTORY}")
+    UI.message("")
+    UI.message("   Using profiles:")
+    UI.message("   - Main: #{profiles[:main]}")
+    UI.message("   - AutoFill: #{profiles[:autofill]}")
+    UI.message("   - Widget: #{profiles[:widget]}")
+    UI.message("   - Team ID: #{profiles[:team_id]}")
+    
+    build_app(build_options(profiles))
+    
+    UI.success("✅ Build completed!")
+    
+    if File.exist?(AppConfig.ipa_path)
+      size = File.size(AppConfig.ipa_path).to_f / (1024 * 1024)
+      UI.message("📦 IPA Size: #{size.round(2)} MB")
+      UI.message("📍 IPA Location: #{AppConfig.ipa_path}")
+    end
+  end
+
+  ########################################################################
+  # Beta lane - Upload to TestFlight
+  ########################################################################
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    unless File.exist?(AppConfig::WORKSPACE)
+      UI.user_error!("Workspace not found at: #{AppConfig::WORKSPACE}")
+    end
+    
+    # Ensure password is available for Fastlane
+    ensure_app_specific_password
+    
+    install_provisioning_profiles
+    profiles = get_profiles_from_script
+    
+    if profiles[:main].nil? || profiles[:autofill].nil? || profiles[:widget].nil?
+      UI.user_error!("Missing provisioning profiles! Run 'fastlane check_profiles' first.")
+    end
+    
+    UI.message("📤 Building and uploading to TestFlight...")
+    
+    build_app(build_options(profiles))
+    
+    # upload_to_testflight will use FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD
+    upload_to_testflight(
+      username: AppConfig::APPLE_ID,
+      skip_waiting_for_build_processing: true
+    )
+    
+    UI.success("✅ Uploaded to TestFlight successfully!")
+  end
+
+  ########################################################################
+  # Release lane - Upload to App Store
+  ########################################################################
+  desc "Build and upload to App Store"
+  lane :release do
+    unless File.exist?(AppConfig::WORKSPACE)
+      UI.user_error!("Workspace not found at: #{AppConfig::WORKSPACE}")
+    end
+    
+    # Ensure password is available for Fastlane
+    ensure_app_specific_password
+    
+    install_provisioning_profiles
+    profiles = get_profiles_from_script
+    
+    if profiles[:main].nil? || profiles[:autofill].nil? || profiles[:widget].nil?
+      UI.user_error!("Missing provisioning profiles! Run 'fastlane check_profiles' first.")
+    end
+    
+    UI.message("📤 Building and uploading to App Store...")
+    UI.message("   Workspace: #{AppConfig::WORKSPACE}")
+    
+    build_app(build_options(profiles))
+    
+    # upload_to_app_store will use FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD
+    upload_to_app_store(
+      username: AppConfig::APPLE_ID,
+      skip_metadata: true,
+      skip_screenshots: true,
+      skip_binary_upload: false,
+      submit_for_review: false,
+      automatic_release: false
+    )
+    
+    UI.success("✅ Uploaded to App Store successfully!")
+    UI.message("📝 Next steps:")
+    UI.message("   1. Check App Store Connect for processing")
+    UI.message("   2. Submit for review when ready")
+  end
+end
