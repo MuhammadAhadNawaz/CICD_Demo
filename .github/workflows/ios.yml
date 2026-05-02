@@ -1,4 +1,4 @@
-name: iOS CI/CD (Xcode 26)
+name: iOS CI/CD
 
 on:
   push:
@@ -13,36 +13,46 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode 26
-        run: sudo xcode-select -s /Applications/Xcode_26.app
+      # 2. Select Xcode (safe default for GitHub runners)
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
+      # 3. Show Xcode version
       - name: Xcode version
         run: xcodebuild -version
 
+      # 4. Install Fastlane
       - name: Install Fastlane
         run: sudo gem install fastlane -NV
 
+      # 5. Install Transporter
       - name: Install Transporter
         run: brew install --cask transporter
 
+      # 6. Verify Transporter
       - name: Verify Transporter
         run: |
           ls /Applications/Transporter.app/Contents/itms/bin/
           /Applications/Transporter.app/Contents/itms/bin/iTMSTransporter -version
 
+      # 7. Set Transporter path for Fastlane
       - name: Set Transporter path
         run: echo "FASTLANE_ITUNES_TRANSPORTER_PATH=/Applications/Transporter.app/Contents/itms/bin/iTMSTransporter" >> $GITHUB_ENV
 
-      - name: Debug transporter path
+      # 8. Debug Transporter path
+      - name: Debug Transporter path
         run: echo $FASTLANE_ITUNES_TRANSPORTER_PATH
 
+      # 9. Resolve Swift dependencies (SPM)
       - name: Resolve dependencies
         run: xcodebuild -resolvePackageDependencies
 
-      - name: Build & Upload to TestFlight
+      # 10. Build & Upload to TestFlight
+      - name: Build & Upload
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
